@@ -1,1 +1,0 @@
-This is a project about a more modern type of terminal
