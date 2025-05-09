@@ -1,0 +1,5 @@
+whoami:
+This command will tell the current user
+
+Ex. whoami > user_name
+end!
