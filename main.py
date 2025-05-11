@@ -7,10 +7,11 @@ from utils.curses_app import *
 from utils.file_reader import *
 from utils.table_drawer import *
 from utils.mandb import *
+from utils.editor import *
 
 
 def main(screen):
-    command_list = ["whoami", "close", "table", "clear", "man"]
+    command_list = ["edit", "whoami", "close", "table", "clear", "man"]
     screen = create_app()
     rows, cols = screen.getmaxyx()
     window = curses.newwin(rows-2, cols-3, 1, 1)
@@ -66,9 +67,13 @@ def main(screen):
                 if in_line[1] not in command_list:
                     message(window, "Please use a correct command name")
                     continue
+
                 man = find_man(in_line[1])
                 for l in man:
                     message(window, l)
+            case "edit":
+                test_editor(window)
+
             case "clear":
                 window.clear()
 

@@ -1,4 +1,4 @@
-
+import curses
 
 
 
@@ -62,17 +62,15 @@ def read_from_file(filename, divisor="", separator=0):
         return processed_list
 
 my_list = read_from_file("test.txt")
-print(my_list)
+
 test_list = ["cat1;cat2;cat3;cat4;cat5;", "1;2;3;4;5;", "test1;test2;test3;test4;"]
 
+file = []
+with open("editor_test.txt", "r") as f:
+    for line in f.readlines():
+        file.append(line.replace("\n", ""))
 
-test_len = 0
-for line in test_list:
-    if len(line.rstrip(";").split(";")) > test_len:
-
-        test_len = len(line.rstrip(";").split(";"))
-
-
+print(file)
 
 
 
