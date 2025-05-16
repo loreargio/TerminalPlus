@@ -65,12 +65,8 @@ my_list = read_from_file("test.txt")
 
 test_list = ["cat1;cat2;cat3;cat4;cat5;", "1;2;3;4;5;", "test1;test2;test3;test4;"]
 
-file = []
-with open("editor_test.txt", "r") as f:
-    for line in f.readlines():
-        file.append(line.replace("\n", ""))
-
-print(file)
+test_string = "provaprova"
+print(test_string[0:40])
 
 
 
