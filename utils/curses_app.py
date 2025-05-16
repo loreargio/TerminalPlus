@@ -9,12 +9,6 @@ def create_app():
 
     return screen
 
-def line(scr, text: str, pos: tuple[int, int]):
-    scr.addstr(pos[0], pos[1], text)
-    curses.echo()
-    text_out = scr.getstr()
-
-    return text_out
 
 def find_newline(window) -> int:
     newline = 0
@@ -25,6 +19,3 @@ def find_newline(window) -> int:
             break
 
     return newline
-
-def message(window, text):
-    window.addstr(find_newline(window), 0, text)
