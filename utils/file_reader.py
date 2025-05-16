@@ -1,6 +1,4 @@
-from .curses_app import message
-
-def read_file(window, filename: str, divisor: str="", separator: int=0) -> list:
+def read_file(window_controller, filename: str, divisor: str="", separator: int=0) -> list:
     """
     Reads a csv-style file and processes it according to divisor
     and separator values
@@ -24,20 +22,17 @@ def read_file(window, filename: str, divisor: str="", separator: int=0) -> list:
                 else:
                     processed_list.append(line.replace("\n", ""))
     except Exception:
-        message(window, f"Cannot find '{filename}'")
-    # CONTINUE TO DEVELOP THIS, TEST IN TEST.PY
-    # THE MAX ELEMENTS FINDER
+        window_controller.write_line(f"Cannot find '{filename}'", line="new")
+
     new_processed_list = []
     if divisor != "":
+        if separator > 0:
+            for line_index in range(len(processed_list)):
+                split_line = processed_list[line_index].rstrip(";").split(";")
+                for i in range(len(split_line)):
+                    split_line[i] += " "*(separator-len(split_line[i]))
+                new_processed_list.append(divisor.join(split_line))
 
-        for line in processed_list:
-            cell_list = []
-            if separator != 0:
-                for cell in line.rstrip(";").split(";"):
-                    cell_list.append(cell.ljust(separator))
-                new_processed_list.append("│".join(cell_list))
-            else:
-                new_processed_list.append(line.replace(";", divisor))
         return new_processed_list
     else:
         return processed_list

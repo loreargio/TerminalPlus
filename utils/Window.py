@@ -23,11 +23,18 @@ class Window:
     def read_line(self, y: int) -> str:
         return self.__window.getstr(y, 0).decode("utf-8")
 
-    def get_input(self) -> int:
+    def get_input_ch(self) -> int:
         self.__window.keypad(True)
         curses.noecho()
 
         return self.__window.getch()
+
+    def get_input_str(self, input_text: str):
+        self.write_line(input_text, line="new")
+        curses.echo()
+        text_out = self.__window.getstr()
+
+        return text_out
 
     def get_mouse_pos(self) -> tuple[int, int]:
         return self.__window.getyx()

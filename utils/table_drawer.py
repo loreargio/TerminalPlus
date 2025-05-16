@@ -1,12 +1,11 @@
-from .curses_app import find_newline
 from .file_reader import read_file
 
-def draw_table(window, file):
+def draw_table(window, window_controller , file):
     max_len = 0
     max_cell_len = 0
     max_elements = 0
 
-    lines = read_file(window, file)
+    lines = read_file(window_controller, file)
     if not lines:
         return 0
     for line in lines:
@@ -25,30 +24,31 @@ def draw_table(window, file):
 
     #  ─ │   ┬ ┴ ├ ┤   ┼   └ ┘ ┌ ┐
 
-    def draw_first_line(window, max_cell_len, max_elements):
+    def draw_first_line(window_controller, max_cell_len, max_elements):
         start_piece = "┌"
         separator = "┬"
         middle_part = (("─" * max_cell_len) + separator) * max_elements
         end_piece = "┐"
 
         first_line = start_piece + middle_part.rstrip(separator) + end_piece
-        window.addstr(find_newline(window), 0, first_line)
+        window_controller.write_line(first_line, line="new")
 
-    def draw_last_line(window, max_cell_len, max_elements):
+
+    def draw_last_line(window_controller, max_cell_len, max_elements):
         start_piece = "└"
         separator = "┴"
         middle_part = (("─" * max_cell_len) + separator)*max_elements
         end_piece = "┘"
 
         last_line = start_piece + middle_part.rstrip(separator) + end_piece
-        window.addstr(find_newline(window), 0, last_line)
+        window_controller.write_line(last_line, line="new")
 
-    draw_first_line(window, max_cell_len, max_elements)
+    draw_first_line(window_controller, max_cell_len, max_elements)
     for index in range(len(lines)*2-1):
         if index % 2 == 0:
             new_lines = read_file(window, file, divisor="│", separator=max_cell_len)
             value_lines = "│" + new_lines[int(index / 2)] + "│"
-            window.addstr(find_newline(window), 0, value_lines)
+            window_controller.write_line(value_lines, line="new")
 
         elif index % 2 == 1:
             start_piece = "├"
@@ -57,5 +57,5 @@ def draw_table(window, file):
             end_piece = "┤"
 
             middle_line = start_piece + middle_part.rstrip(separator) + end_piece
-            window.addstr(find_newline(window), 0, middle_line)
-    draw_last_line(window, max_cell_len, max_elements)
+            window_controller.write_line(middle_line, line="new")
+    draw_last_line(window_controller, max_cell_len, max_elements)

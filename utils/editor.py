@@ -1,5 +1,3 @@
-from .curses_app import find_newline, message
-import curses
 from .Window import Window
 
 
@@ -59,7 +57,7 @@ def test_editor(window):
 
         editor_window.move_cursor(new_curs_x, new_curs_y)
 
-        key = editor_window.get_input()
+        key = editor_window.get_input_ch()
 
         # exit
         if key == 24:

@@ -8,39 +8,42 @@ from utils.file_reader import *
 from utils.table_drawer import *
 from utils.mandb import *
 from utils.editor import *
+from utils.Window import Window
 
 
 def main(screen):
     command_list = ["edit", "whoami", "close", "table", "clear", "man"]
     screen = create_app()
     rows, cols = screen.getmaxyx()
-    window = curses.newwin(rows-2, cols-3, 1, 1)
+    main_window = Window((1, 1), rows-2, cols-3)
+    window = main_window.get_window()
     rectangle(screen, 0, 0, rows-1, cols-2)
     screen.refresh()
 
-    start_x = 0
-    while True:
 
-        test_line = line(window, "Test> ", (find_newline(window), start_x))
+    while True:
+        test_line = main_window.get_input_str("Test>")
+
 
         in_line = test_line.decode("utf-8").split(" ")
         match in_line[0]:
             case "close":
                 break
             case "whoami":
-                window.addstr(find_newline(window), 0, subprocess.getoutput("whoami"))
+                main_window.write_line(subprocess.getoutput("whoami"), line="new")
+
             case "table":
                 if len(in_line) == 1:
-                    message(window, "At least 1 argument required")
+                    main_window.write_line("At least 1 argument required", line="new")
                     continue
                 if len(in_line) > 2:
-                    message(window, "Cannot use more than 1 argument")
+                    main_window.write_line("Cannot use more than 1 argument", line="new")
                     continue
 
                 if pathvalidate.is_valid_filename(in_line[1]):
-                    draw_table(window, in_line[1])
+                    draw_table(window, main_window, in_line[1])
                 else:
-                    message(window, "Insert a correct text file")
+                    main_window.write_line("Insert a correct text file", line="new")
                     continue
             case "table-chars":
                 window.addch(curses.ACS_HLINE)
@@ -59,18 +62,19 @@ def main(screen):
                 window.addch(curses.ACS_URCORNER)
             case "man":
                 if len(in_line) == 1:
-                    message(window, "Please insert the name of a command")
+                    main_window.write_line("Please insert the name of a command", line="new")
                     continue
                 if len(in_line) > 2:
-                    message(window, "Cannot use more than 1 argument")
+                    main_window.write_line("Cannot use more than 1 argument", line="new")
                     continue
                 if in_line[1] not in command_list:
-                    message(window, "Please use a correct command name")
+                    main_window.write_line("Please use a correct command name", line="new")
                     continue
 
                 man = find_man(in_line[1])
                 for l in man:
-                    message(window, l)
+                    main_window.write_line(l, line="new")
+
             case "edit":
                 test_editor(window)
 
