@@ -1,5 +1,7 @@
 import curses
 from .curses_app import find_newline
+from .file_reader import write_file
+
 
 class Window:
     def __init__(self, pos: tuple[int, int], rows: int, cols: int):
@@ -8,6 +10,17 @@ class Window:
         self.__cols = cols
 
         self.__window = curses.newwin(self.__rows, self.__cols, self.__pos[1], self.__pos[0])
+
+        #display values
+        self.__start_row = 0
+        self.__start_column = 0
+        self.__end_row = 0
+        self.__end_column = 0
+        self.__max_row_len = 0
+        self.__file_len = 0
+        self.__new_curs_x = 0
+        self.__new_curs_y = 0
+
 
     def get_window(self):
         return self.__window
@@ -20,14 +33,23 @@ class Window:
 
 
 
-    def read_line(self, y: int) -> str:
+    def read_str_input(self, y: int) -> str:
         return self.__window.getstr(y, 0).decode("utf-8")
+
+    def read_line(self, y: int) -> str:
+        return self.__window.instr(y, 0).decode("utf-8")
 
     def get_input_ch(self) -> int:
         self.__window.keypad(True)
         curses.noecho()
 
         return self.__window.getch()
+
+    def get_input_from_cursor(self, x: int=0, y: int=0, length: int=1):
+        curr_y, curr_x = self.get_mouse_pos()
+        character = self.__window.instr(curr_y+y, curr_x+x, length)
+
+        return character.decode("utf-8")
 
     def get_input_str(self, input_text: str):
         self.write_line(input_text, line="new")
@@ -66,22 +88,163 @@ class Window:
     def move_cursor(self, x: int, y: int):
         self.__window.move(y, x)
 
-    def advanced_display(self, text: list[str]=[], start_row: int=0, end_row: int=0, start_column: int=0, end_column: int=0, filename: str=""):
-        if text == [] and filename != "":
-            input_text = []
-            with open(filename, "r") as input_file:
-                for line in input_file.readlines():
-                    if line != "\n":
-                        input_text.append(line.replace("\n", ""))
-                    else:
-                        input_text.append(line)
-        else:
-            input_text = text
 
-        write_index = 0
-        for index in range(start_row, end_row-1):
-            if input_text[index] == "\n":
-                self.write_line(" "*(self.get_win_x()-1), 0, write_index)
+    def initialize_display_values(self, filename: str, text: list[str]=[]):
+        self.__max_row_len = 0
+        if text == [] and filename != "":
+            input_file = []
+            with open(filename, "r") as file:
+                for line in file.readlines():
+                    input_file.append(line.replace("\n", ""))
+        else:
+            input_file = text
+        for line in input_file:
+            if len(line.replace("\n", "")) > self.__max_row_len:
+                self.__max_row_len = len(line.replace("\n", ""))
+
+        self.__file_len = len(input_file)-1
+
+        if self.__file_len > self.get_win_y():
+            self.__end_row = self.get_win_y()
+        else:
+            self.__end_row = self.__file_len
+
+        if self.__max_row_len > self.get_win_x():
+            self.__end_column = self.get_win_x()
+        else:
+            self.__end_column = self.__max_row_len
+
+        self.__new_curs_y, self.__new_curs_x = self.get_mouse_pos()
+
+    def advanced_display(self, parent_window: curses.window, text: list[str]=[], filename: str=""):
+        while True:
+            if text == [] and filename != "":
+                input_text = []
+                with open(filename, "r") as input_file:
+                    for line in input_file.readlines():
+                        input_text.append(line.replace("\n", ""))
             else:
-                self.write_line(input_text[index][start_column:end_column], 0, write_index)
-            write_index += 1
+                input_text = text
+
+
+            write_index = 0
+            for index, line in enumerate(input_text):
+                if index < self.__start_row:
+                    continue
+                elif index == self.__end_row:
+                    break
+                else:
+                    self.write_line(input_text[index][self.__start_column:self.__end_column], 0, write_index)
+                    write_index += 1
+
+
+            self.move_cursor(self.__new_curs_x, self.__new_curs_y)
+
+            input_key = self.get_input_ch()
+
+            arrow_up = 259
+            arrow_down = 258
+            arrow_left = 260
+            arrow_right = 261
+            ctrl_x = 24
+            enter = 10
+
+
+
+            # exit
+            if input_key == ctrl_x:
+                self.__window.clear()
+                self.__window.touchwin()
+                parent_window.refresh()
+                parent_window.clear()
+                return
+
+            # pressed enter
+            if input_key == enter:
+                curr_y, curr_x = self.get_mouse_pos()
+
+                new_line = self.get_input_from_cursor(length=self.get_win_x() - curr_x).strip(" ")
+                file_index = self.__start_row + curr_y
+                if new_line == "":
+                    input_text.insert(file_index+1, "\n")
+                else:
+                    input_text.insert(file_index+1, new_line)
+                    prev_line = input_text[file_index].split(new_line)
+
+                    input_text.pop(file_index)
+                    input_text.insert(file_index, "".join(prev_line))
+                write_file(filename, input_text)
+                self.__new_curs_y += 1
+                self.__window.clear()
+
+
+            curs_y, curs_x = self.get_mouse_pos()
+
+            # move up
+            if input_key == arrow_up and curs_y > 0:
+                new_y, new_x = self.move_up()
+                if new_y - 4 == 3 and self.__start_row > 0:
+                    self.__start_row -= 1
+                    self.__end_row -= 1
+                    self.__window.clear()
+                    continue
+                self.__new_curs_y = new_y
+
+                if self.read_line(new_y).strip(" ") == "":
+                    self.__new_curs_x = 0
+                else:
+                    self.__new_curs_x = new_x
+
+            # move down
+            if input_key == arrow_down and curs_y + 1 < self.get_win_y():
+                new_y, new_x = self.move_down()
+                if new_y + 4 == self.get_win_y() and self.__end_row <= self.__file_len:
+                    self.__start_row += 1
+                    self.__end_row += 1
+                    self.__window.clear()
+                    continue
+                self.__new_curs_y = new_y
+
+                if self.read_line(new_y).strip(" ") == "":
+                    self.__new_curs_x = 0
+                else:
+                    self.__new_curs_x = new_x
+
+
+            # move left
+            if input_key == arrow_left and curs_x > 0:
+                new_y, new_x = self.move_left()
+                if new_x - 4 == 0 and self.__start_column > 0:
+                    self.__start_column -= 1
+                    self.__end_column -= 1
+                    self.__window.clear()
+                    continue
+                self.__new_curs_y = new_y
+                self.__new_curs_x = new_x
+
+            # move right
+            if input_key == arrow_right and curs_x < self.get_win_x() - 1:
+                new_y, new_x = self.move_right()
+                if new_x + 4 == self.get_win_x() and self.__end_column < self.__max_row_len + 1:
+                    self.__start_column += 1
+                    self.__end_column += 1
+                    self.__window.clear()
+                    continue
+                self.__new_curs_y = new_y
+                self.__new_curs_x = new_x
+
+
+
+            curr_y, curr_x = self.get_mouse_pos()
+            line_len = len(input_text[self.__start_row + curr_y])
+            if self.__new_curs_x > line_len:
+                self.__new_curs_x = line_len
+
+            if len(input_text[self.__start_row + self.__new_curs_y]) < self.get_win_x():
+                if self.__start_column > 0:
+                    self.__end_column -= self.__start_column
+                    self.__start_column = 0
+
+
+
+
