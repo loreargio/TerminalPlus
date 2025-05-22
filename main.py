@@ -1,10 +1,7 @@
-import curses
-import curses.textpad
 from curses.textpad import rectangle
 import subprocess
 import pathvalidate
 from utils.curses_app import *
-from utils.file_reader import *
 from utils.table_drawer import *
 from utils.mandb import *
 from utils.editor import *
@@ -20,10 +17,8 @@ def main(screen):
     rectangle(screen, 0, 0, rows-1, cols-2)
     screen.refresh()
 
-
     while True:
         test_line = main_window.get_input_str("Test>")
-
 
         in_line = test_line.decode("utf-8").split(" ")
         match in_line[0]:
@@ -76,7 +71,7 @@ def main(screen):
                     main_window.write_line(l, line="new")
 
             case "edit":
-                test_editor(window)
+                test_editor(window, main_window)
 
             case "clear":
                 window.clear()
