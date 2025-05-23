@@ -148,8 +148,9 @@ class Window:
             arrow_right = 261
             ctrl_x = 24
             enter = 10
+            backspace = 263
 
-
+            curr_y, curr_x = self.get_mouse_pos()
 
             # exit
             if input_key == ctrl_x:
@@ -161,8 +162,6 @@ class Window:
 
             # pressed enter
             if input_key == enter:
-                curr_y, curr_x = self.get_mouse_pos()
-
                 new_line = self.get_input_from_cursor(length=self.get_win_x() - curr_x).strip(" ")
                 file_index = self.__start_row + curr_y
                 if new_line == "":
@@ -178,10 +177,34 @@ class Window:
                 self.__window.clear()
 
 
-            curs_y, curs_x = self.get_mouse_pos()
+            #backspace
+            if input_key == backspace:
+                row_index = self.__start_row+curr_y
+                curr_line_index = self.__start_column+curr_x
+
+                if curr_line_index == 0:
+                    if curr_y - 1 > -1:
+                        if len(input_text[row_index]) > 0:
+                            if input_text[row_index-1] == "":
+                                input_text[row_index-1] = input_text[row_index]
+                                input_text.pop(row_index)
+                            else:
+                                input_text[row_index-1] += input_text[row_index]
+                                input_text.pop(row_index)
+                        else:
+                            input_text.pop(row_index)
+                else:
+                    curr_line = list(input_text[row_index])
+                    curr_line.pop(curr_line_index-1)
+                    input_text[row_index] = "".join(curr_line)
+
+                write_file(filename, input_text)
+                self.__new_curs_x -= 1
+                self.__window.clear()
+
 
             # move up
-            if input_key == arrow_up and curs_y > 0:
+            if input_key == arrow_up and curr_y > 0:
                 new_y, new_x = self.move_up()
                 if new_y - 4 == 3 and self.__start_row > 0:
                     self.__start_row -= 1
@@ -196,7 +219,7 @@ class Window:
                     self.__new_curs_x = new_x
 
             # move down
-            if input_key == arrow_down and curs_y + 1 < self.get_win_y():
+            if input_key == arrow_down and curr_y + 1 < self.get_win_y():
                 new_y, new_x = self.move_down()
                 if new_y + 4 == self.get_win_y() and self.__end_row <= self.__file_len:
                     self.__start_row += 1
@@ -212,7 +235,7 @@ class Window:
 
 
             # move left
-            if input_key == arrow_left and curs_x > 0:
+            if input_key == arrow_left and curr_x > 0:
                 new_y, new_x = self.move_left()
                 if new_x - 4 == 0 and self.__start_column > 0:
                     self.__start_column -= 1
@@ -223,7 +246,7 @@ class Window:
                 self.__new_curs_x = new_x
 
             # move right
-            if input_key == arrow_right and curs_x < self.get_win_x() - 1:
+            if input_key == arrow_right and curr_x < self.get_win_x() - 1:
                 new_y, new_x = self.move_right()
                 if new_x + 4 == self.get_win_x() and self.__end_column < self.__max_row_len + 1:
                     self.__start_column += 1
