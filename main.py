@@ -16,6 +16,7 @@ def main(screen):
     window = main_window.get_window()
     rectangle(screen, 0, 0, rows-1, cols-2)
     screen.refresh()
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
     while True:
         test_line = main_window.get_input_str("Test>")

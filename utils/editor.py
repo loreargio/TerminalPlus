@@ -14,6 +14,7 @@ def test_editor(window, window_controller):
     window_controller.write_line("─"*len(my_file)+"┘", 0, 1, "custom")
     window.refresh()
 
+
     editor.initialize_display_values(filename=my_file, text=[])
 
     editor.advanced_display(text=[], filename=my_file, parent_window=window)
