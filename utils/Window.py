@@ -10,7 +10,6 @@ class Window:
         self.__cols = cols
 
         self.__window = curses.newwin(self.__rows, self.__cols, self.__pos[1], self.__pos[0])
-
         #display values
         self.__start_row = 0
         self.__start_column = 0
@@ -20,6 +19,13 @@ class Window:
         self.__file_len = 0
         self.__new_curs_x = 0
         self.__new_curs_y = 0
+
+        #mouse selection
+        self.__sel_start_y = 0
+        self.__sel_end_y = 0
+        self.__sel_start_x = 0
+        self.__sel_end_x = 0
+        self.__sel_begin = 0
 
 
     def get_window(self):
@@ -126,7 +132,7 @@ class Window:
             else:
                 input_text = text
 
-
+            #write text lines
             write_index = 0
             for index, line in enumerate(input_text):
                 if index < self.__start_row:
@@ -137,6 +143,16 @@ class Window:
                     self.write_line(input_text[index][self.__start_column:self.__end_column], 0, write_index)
                     write_index += 1
 
+
+            if self.__sel_begin == 1:
+                if self.__sel_start_y == self.__sel_end_y:
+                    self.__window.chgat(self.__sel_start_y, self.__sel_start_x, self.__sel_end_x - self.__sel_start_x, curses.A_REVERSE)
+                else:
+                    self.__window.chgat(self.__sel_start_y, self.__sel_start_x, curses.A_REVERSE)
+                    for i in range(1, self.__sel_end_y-self.__sel_start_y):
+                        self.__window.chgat(self.__sel_start_y+i, 0, curses.A_REVERSE)
+                    self.__window.chgat(self.__sel_end_y, 0, self.__sel_end_x, curses.A_REVERSE)
+                self.__sel_begin = 0
 
             self.move_cursor(self.__new_curs_x, self.__new_curs_y)
 
@@ -159,6 +175,24 @@ class Window:
                 parent_window.refresh()
                 parent_window.clear()
                 return
+
+            char_pool = list(range(33, 168))
+            char_pool.append(176)
+            #pressed character
+            if input_key in char_pool:
+                row_index = self.__start_row + curr_y
+                curr_line_index = self.__start_column + curr_x
+
+                if curr_x == len(input_text[row_index]):
+                    input_text[row_index] += chr(input_key)
+                else:
+                    new_line = list(input_text[row_index])
+                    new_line.insert(curr_line_index, chr(input_key))
+                    input_text[row_index] = "".join(new_line)
+                write_file(filename, input_text)
+                self.__new_curs_x += 1
+                self.__window.clear()
+
 
             # pressed enter
             if input_key == enter:
@@ -201,6 +235,33 @@ class Window:
                 write_file(filename, input_text)
                 self.__new_curs_x -= 1
                 self.__window.clear()
+
+
+            #mouse click
+            if input_key == curses.KEY_MOUSE:
+                _, m_x, m_y, _, state = curses.getmouse()
+                if state == 4:
+                    self.__new_curs_x = m_x-1
+                    self.__new_curs_y = m_y - 3
+
+                    self.__sel_start_x = 0
+                    self.__sel_start_y = 0
+                    self.__sel_end_x = 0
+                    self.__sel_end_y = 0
+                    self.__window.clear()
+
+                elif state == 2:
+                    start_x, start_y = m_x, m_y-3
+                    self.__sel_start_x = start_x-1
+                    self.__sel_start_y = start_y
+
+                if state == 1:
+                    end_x = m_x
+                    end_y = m_y-3
+
+                    self.__sel_end_x = end_x
+                    self.__sel_end_y = end_y
+                    self.__sel_begin = 1
 
 
             # move up
